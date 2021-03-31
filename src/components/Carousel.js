@@ -1,275 +1,303 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
-import data from '../data';
-import Button from './Button';
-import blobFirst from '../assets/images/vector-dark.svg';
-import blobSecond from '../assets/images/vector-red.svg';
+import { useStateValue } from '../StateProvider';
+import Slide from '../components/Slide';
+import loadingGif from '../assets/images/loading.svg';
+import Dots from './Dots';
+
+const CarouselWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  min-height: 700px;
+  width: 100%;
+  max-width: 811px;
+  min-width: 270px;
+  @media (min-width: 650px) {
+    width: 540px;
+  }
+  @media (min-width: 950px) {
+    width: 811px;
+  }
+  .slide {
+    display: grid;
+    place-items: center;
+    margin: 0 auto;
+    height: 381px;
+    width: 100%;
+    max-width: 811px;
+    min-width: 270px;
+    background: #fff;
+    border-radius: 5px;
+    border: 1px solid #222;
+    z-index: 1;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  .activeSlide {
+    opacity: 1;
+  }
+  .loadingSlides {
+    display: grid;
+    place-items: center;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .slides {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 500px;
+    width: 100%;
+    min-width: 270px;
+    z-index: 1;
+    overflow: hidden;
+    touch-action: none;
+    pointer-events: all;
+    cursor: pointer;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  }
+`;
 
 const Carousel = () => {
-  const [employees, setEmployees] = useState(data);
-  const [index, setIndex] = useState(0);
-  let initialPosition = null;
-  let moving = false;
+  const [{ index, loading, apiData }, dispatch] = useStateValue();
+  const [count, setCount] = useState([]);
+  const url = 'https://randomuser.me/api/?results=13';
+  const sliderChildren = useRef(0);
 
-  const swipeInit = (e) => {
-    initialPosition = e.pageX;
-    moving = true;
-    console.log(initialPosition);
+  let moving = false;
+  let initialMousePosition = null;
+  let initialFingerPosition = null;
+
+  const fetchData = async () => {
+    dispatch({
+      type: 'LOADING_TRUE',
+      payload: true,
+    });
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data === undefined) {
+      return null;
+    } else if (data.results) {
+      dispatch({
+        type: 'SET_DATA',
+        payload: data.results,
+      });
+      dispatch({
+        type: 'LOADING_FALSE',
+        payload: false,
+      });
+      let slideCount = document.getElementsByClassName('mainSlide').length;
+      setCount(Array.from(Array(slideCount).keys()));
+    }
   };
 
-  const swipeSlide = (e) => {
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    if (count.length > 0) {
+      let lastIndex = count.length - 1;
+
+      if (index < 0) {
+        dispatch({
+          type: 'SET_INDEX_LAST',
+          payload: lastIndex,
+        });
+      }
+
+      if (index > lastIndex) {
+        dispatch({
+          type: 'SET_INDEX_FIRST',
+          payload: 0,
+        });
+      }
+
+      if (sliderChildren.current.childNodes[index]) {
+        let notIndex = count.filter(function (x) {
+          return x !== index;
+        });
+
+        notIndex.map((notIndex) => {
+          if (
+            sliderChildren.current.childNodes[
+              notIndex
+            ].firstChild.classList.contains('activeSlide')
+          ) {
+            sliderChildren.current.childNodes[
+              notIndex
+            ].firstChild.classList.remove('activeSlide');
+
+            sliderChildren.current.childNodes[
+              notIndex
+            ].firstChild.style.transform = 'translateX(0px)';
+          }
+        });
+
+        if (
+          sliderChildren.current.childNodes[
+            index
+          ].firstChild.classList.contains(index)
+        ) {
+          sliderChildren.current.childNodes[index].firstChild.classList.add(
+            'activeSlide'
+          );
+        }
+      }
+    }
+  }, [count, index]);
+
+  const fingerSwipeStart = (e) => {
+    initialFingerPosition = e.touches[0].screenX;
+    moving = true;
+  };
+
+  const mouseSwipeStart = (e) => {
+    initialMousePosition = e.pageX;
+    moving = true;
+  };
+
+  const fingerSwipeMove = (e) => {
+    let positionDiff = null;
+
+    if (!moving) {
+      return;
+    }
+
+    if (moving) {
+      const currentPosition = e.touches[0].screenX;
+      positionDiff = currentPosition - initialFingerPosition;
+
+      sliderChildren.current.childNodes[
+        index
+      ].firstChild.style.transform = `translateX(${positionDiff}px)`;
+
+      if (positionDiff <= -200) {
+        dispatch({
+          type: 'NEXT_SLIDE',
+          payload: 1,
+        });
+      } else if (positionDiff >= 200) {
+        dispatch({
+          type: 'PREV_SLIDE',
+          payload: -1,
+        });
+      }
+    }
+  };
+
+  const mouseSwipeMove = (e) => {
+    let positionDiff = null;
+
+    if (!moving) {
+      return;
+    }
+
     if (moving) {
       const currentPosition = e.pageX;
-      console.log(currentPosition);
-      if (initialPosition - currentPosition >= 100) {
-        prevSlide();
-      } else if (initialPosition - currentPosition <= -100) {
-        nextSlide();
+      positionDiff = currentPosition - initialMousePosition;
+
+      sliderChildren.current.childNodes[
+        index
+      ].firstChild.style.transform = `translateX(${positionDiff}px)`;
+
+      if (positionDiff <= -250) {
+        dispatch({
+          type: 'NEXT_SLIDE',
+          payload: 1,
+        });
+      } else if (positionDiff >= 250) {
+        dispatch({
+          type: 'PREV_SLIDE',
+          payload: -1,
+        });
       }
     }
   };
 
   const swipeEnd = () => {
     moving = false;
-    initialPosition = null;
-  };
-
-  const prevSlide = () => {
-    setIndex((oldIndex) => {
-      let index = oldIndex - 1;
-      if (index < 0) {
-        index = employees.length - 1;
-      }
-      return index;
-    });
-  };
-
-  const nextSlide = () => {
-    setIndex((oldIndex) => {
-      let index = oldIndex + 1;
-      if (index > employees.length - 1) {
-        index = 0;
-      }
-      return index;
-    });
-  };
-
-  const preventDragging = (e) => {
-    e.preventDefault();
+    sliderChildren.current.childNodes[index].firstChild.style.transform =
+      'translateX(0px)';
   };
 
   useEffect(() => {
-    let slider = setInterval(() => {
-      setIndex((oldIndex) => {
-        let index = oldIndex + 1;
-        if (index > employees.length - 1) {
-          index = 0;
-        }
-        return index;
+    let moveSlider = setInterval(() => {
+      dispatch({
+        type: 'ADD_INDEX',
+        payload: 1,
       });
-    }, 6000);
-    return () => clearInterval(slider);
+    }, 7000);
+    return () => clearInterval(moveSlider);
   }, [index]);
 
   return (
     <CarouselWrapper>
-      <Button side='left' leftSlide={prevSlide} preventDrag={preventDragging} />
-      <div className='section'>
-        <img
-          src={blobFirst}
-          alt='dark blob'
-          className='firstBlob'
-          onDragStart={preventDragging}
-        />
-        <img
-          src={blobSecond}
-          alt='red blob'
-          className='secondBlob'
-          onDragStart={preventDragging}
-        />
-        {employees.map((emp, empIndex) => {
-          const { id, image, name, title, email } = emp;
-          // more here
-          let position = 'nextSlide';
-          if (empIndex === index) {
-            position = 'activeSlide';
-          }
-          if (
-            empIndex === index - 1 ||
-            (index === 0 && empIndex === employees.length - 1)
-          ) {
-            position = 'lastSlide';
-          }
-          return (
-            <article
-              key={id}
-              className={position}
-              onMouseDown={swipeInit}
-              onMouseMove={swipeSlide}
-              onMouseUp={swipeEnd}
-              onPointerDown={swipeInit}
-              onPointerMove={swipeSlide}
-              onPointerUp={swipeEnd}
-            >
-              <img
-                src={image}
-                alt={name}
-                className='empImg'
-                onDragStart={preventDragging}
-              />
-              <h4>{name}</h4>
-              <p className='title'>{title}</p>
-              <p className='email'>{email}</p>
-            </article>
-          );
-        })}
-        <div className='dots'>
-          {employees.map((_, dotIndex) => {
-            return (
-              <span
-                key={dotIndex}
-                className={index === dotIndex ? 'active' : null}
-                onClick={() => setIndex(dotIndex)}
-              ></span>
-            );
-          })}
+      {loading ? (
+        <div className='loadingSlides'>
+          <div className='slide'>
+            <img src={loadingGif} alt='loading image' />
+          </div>
         </div>
-      </div>
-        <Button
-          side='right'
-          rightSlide={nextSlide}
-          preventDrag={preventDragging}
-        />
+      ) : (
+        <div
+          ref={sliderChildren}
+          className='slides'
+          onTouchStart={fingerSwipeStart}
+          onTouchMove={fingerSwipeMove}
+          onTouchCancel={swipeEnd}
+          onTouchEnd={swipeEnd}
+          onMouseDown={mouseSwipeStart}
+          onMouseMove={mouseSwipeMove}
+          onMouseUp={swipeEnd}
+          onMouseLeave={swipeEnd}
+        >
+          {apiData?.map(
+            (
+              {
+                login: { uuid },
+                picture: { large: image },
+                name: { first, last },
+                email,
+                phone,
+              },
+              childIndex
+            ) => {
+              return (
+                <Slide
+                  key={uuid}
+                  id='1'
+                  className={`${childIndex} mainSlide`}
+                  image={image}
+                  fName={first}
+                  lName={last}
+                  email={email}
+                  phone={phone}
+                />
+              );
+            }
+          )}
+          <Slide id='2' className={`13 mainSlide exampleSlide`} />
+        </div>
+      )}
+      <Dots count={count} />
     </CarouselWrapper>
   );
 };
-
-const CarouselWrapper = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  overflow: hidden;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  .firstBlob {
-    position: absolute;
-    left: 20%;
-    @media (max-width: 970px) {
-      height: 80%;
-      width: 70%;
-    }
-    @media (max-width: 550px) {
-      display: none;
-    }
-  }
-  .secondBlob {
-    position: absolute;
-    left: 35%;
-    height: 95%;
-    @media (max-width: 970px) {
-      height: 80%;
-      left: 30%;
-    }
-    @media (max-width: 750px) {
-      height: 70%;
-      left: 20%;
-    }
-    @media (max-width: 550px) {
-      display: none;
-    }
-  }
-  article {
-    position: absolute;
-    top: 25%;
-    left: 25%;
-    height: 50%;
-    width: 50%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    background: #fff;
-    border: 1px solid #222;
-    border-radius: 5px;
-    opacity: 0;
-    transition: 0.3s ease-in-out;
-    touch-action: none;
-    cursor: pointer;
-  }
-  article.activeSlide {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  article.lastSlide {
-    transform: translateX(100%);
-  }
-  article.nextSlide {
-    transform: translateX(-100%);
-  }
-  .section {
-    height: 600px;
-    width: 80vw;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  .empImg {
-    margin-bottom: 15px;
-    width: 150px;
-    height: 150px;
-    object-fit: cover;
-    border: 4px solid whitesmoke;
-    border-radius: 50%;
-    -webkit-box-shadow: 2px 3px 6px 2px rgba(0, 0, 0, 0.82);
-    box-shadow: 2px 3px 6px 2px rgba(0, 0, 0, 0.82);
-  }
-  .title {
-    text-transform: capitalize;
-    margin-bottom: 10px;
-  }
-  .email {
-    @media (max-width: 550px) {
-      font-size: 11px;
-    }
-  }
-  .dots {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    position: absolute;
-    bottom: 19%;
-    background: #fff;
-    border-radius: 5px;
-    border: 1px solid #222;
-    height: 30px;
-    width: 200px;
-    outline: none;
-    span {
-      height: 15px;
-      width: 15px;
-      background: #222;
-      margin: 0 auto;
-      border-radius: 50%;
-      cursor: pointer;
-    }
-    .active {
-      height: 15px;
-      width: 15px;
-      background: #e12228;
-      margin: 0 auto;
-      border-radius: 50%;
-      cursor: pointer;
-    }
-    @media (max-width: 550px) {
-      transform: scale(0.9);
-    }
-  }
-`;
 
 export default Carousel;
