@@ -27,6 +27,16 @@ npm install
 npm start
 ```
 
+## Usage
+* Add a slide in Carousel.js into div with a class of "slides"
+
+* Inside Slide.js add custom slide using unique id inside the switch statement
+
+* Inside the custom slide add a div containing classes mainSlide & a number representing 
+the index of the slide
+
+* With index starting from 0 
+
 ## Deployment
 
 * Open terminal and and write following command to bundle up folder called dist
@@ -51,3 +61,4 @@ npm run build
 
 
 
+"# slider" 
