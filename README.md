@@ -55,10 +55,3 @@ npm run build
 * [Webpack](https://webpack.js.org/)
 * [Babel](https://babeljs.io/)
 * [Node.js](http://www.dropwizard.io/1.0.2/docs/)
-
-
-
-
-
-
-"# slider" 
