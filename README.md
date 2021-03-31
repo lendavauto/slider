@@ -28,9 +28,9 @@ npm start
 ```
 
 ## Usage
-* Add a slide in Carousel.js into div with a class of "slides"
+* Add a slide in Carousel.js into a div with a class of "slides"
 
-* Inside Slide.js add custom slide using unique id inside the switch statement
+* Inside Slide.js add a custom slide using unique id inside the switch statement
 
 * Inside the custom slide add a div containing classes mainSlide & a number representing 
 the index of the slide
