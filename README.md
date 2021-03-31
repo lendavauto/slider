@@ -1,6 +1,6 @@
 # Scandiweb slider
 
-Scandiweb react test assignment
+Scandiweb React test assignment
 
 ## Getting Started
 
@@ -32,7 +32,7 @@ npm start
 
 * Inside Slide.js add a custom slide using unique id inside the switch statement
 
-* Inside the custom slide add a div containing classes mainSlide & a number representing 
+* Inside the custom slide add a div containing classes "mainSlide" & a integer representing 
 the index of the slide
 
 * With index starting from 0 
