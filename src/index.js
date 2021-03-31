@@ -1,6 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './components/App';
+import { StateProvider } from './StateProvider';
+import reducer, { initialState } from './reducer';
 
-
-ReactDOM.render(<App />, document.getElementById('app')); // Render app and target custom template div 
+ReactDOM.render(
+  <StateProvider initialState={initialState} reducer={reducer}>
+    <App />
+  </StateProvider>,
+  document.getElementById('app')
+);

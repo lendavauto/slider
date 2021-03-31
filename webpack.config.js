@@ -1,5 +1,6 @@
-const path = require('path'); // path module to manipulate file paths
-const HtmlWebpackPlugin = require('html-webpack-plugin'); // webpack plugin
+const path = require('path'); 
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const FaviconsWebpackPlugin = require('favicons-webpack-plugin');
 
 module.exports = {
   entry: './src/index.js', // setup entry point for react
@@ -14,14 +15,20 @@ module.exports = {
         test: /\.js$/, // look for js and jsx files
         exclude: /node_modules/, // exclude node modules folder
         use: {
-          loader: 'babel-loader', // setup babel loader
+          loader: 'babel-loader',
+        },
+      },
+      {
+        test: /\.html$/i,
+        use: {
+          loader: 'html-loader',
         },
       },
       {
         test: /\.svg$/,
         use: [
           {
-            loader: 'svg-url-loader', // svg loader
+            loader: 'svg-url-loader',
             options: {
               limit: 10000,
             },
@@ -29,7 +36,7 @@ module.exports = {
         ],
       },
       {
-        test: /\.(png|jpe?g|gif)$/i, // image loader
+        test: /\.(png|jpe?g|gif|mov|mp4)$/i,
         use: [
           {
             loader: 'file-loader',
@@ -42,5 +49,6 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './src/index.html', // setup custom template
     }),
+    new FaviconsWebpackPlugin('./src/favicon-32x32.png'),
   ],
 };
